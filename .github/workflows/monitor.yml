@@ -1,0 +1,37 @@
+name: Apartment Availability Monitor
+
+on:
+  schedule:
+    - cron: '*/10 * * * *'
+  workflow_dispatch:
+
+jobs:
+  monitor:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v3
+
+      - uses: actions/setup-python@v4
+        with:
+          python-version: 3.14
+
+      - run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+          python -m playwright install --with-deps chromium
+
+      - uses: actions/cache@v3
+        with:
+          path: units_state.json
+          key: units-state-cache
+
+      - env:
+          APARTMENT_URL: ${{ secrets.APARTMENT_URL }}
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+        run: python monitor.py
+
+      - uses: actions/cache@v3
+        with:
+          path: units_state.json
+          key: units-state-cache
