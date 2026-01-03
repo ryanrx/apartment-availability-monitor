@@ -95,6 +95,67 @@ def scrape_units(url, retry_count=0):
         else:
             raise Exception(f"Scraping failed after {MAX_RETRIES} attempts: {e}")
 
+def get_field_emoji(field_name):
+    """Return appropriate emoji for different field types"""
+    emoji_map = {
+        "rent": ":money_with_wings:",
+        "net_rent": ":dollar:",
+        "concessions": ":gift:",
+        "available": ":calendar:",
+        "bed_bath": ":house:",
+    }
+    return emoji_map.get(field_name, ":arrow_right:")
+
+def format_field_change_message(unit_id, changed_fields, unchanged_fields, prev_info, info):
+    """Format a message for unit field changes"""
+    # Get emojis for all changed fields
+    emojis = [get_field_emoji(field) for field in changed_fields]
+    emoji_str = " ".join(emojis)
+
+    # Build title with all changed fields
+    if len(changed_fields) == 1:
+        field_name = changed_fields[0].replace('_', ' ').title()
+        title = f"{emoji_str} {field_name} changed for {unit_id}"
+    else:
+        field_names = [f.replace('_', ' ').title() for f in changed_fields]
+        if len(field_names) == 2:
+            title = f"{emoji_str} {' and '.join(field_names)} changed for {unit_id}"
+        else:
+            title = f"{emoji_str} {', '.join(field_names[:-1])}, and {field_names[-1]} changed for {unit_id}"
+
+    lines = [f"{title}\n"]
+    lines.append(f"Bed/Bath: {info['bed_bath']}\n")
+
+    # Show changed fields with before/after
+    for field in changed_fields:
+        prev_value = prev_info.get(field, "")
+        new_value = info.get(field, "")
+        lines.append(f"{field.replace('_', ' ').title()}: {prev_value} → {new_value}")
+
+    # Show unchanged fields for context
+    for field in unchanged_fields:
+        lines.append(f"{field.replace('_', ' ').title()}: {info.get(field, '')}")
+
+    return "\n".join(lines)
+
+def detect_field_changes(prev_info, info):
+    """Detect which fields have changed between two unit info dicts.
+    Returns tuple of (changed_fields, unchanged_fields).
+    """
+    tracked_fields = ["rent", "available", "concessions", "net_rent"]
+    changed_fields = []
+    unchanged_fields = []
+
+    for field in tracked_fields:
+        prev_value = prev_info.get(field, "")
+        new_value = info.get(field, "")
+        if prev_value != new_value:
+            changed_fields.append(field)
+        else:
+            unchanged_fields.append(field)
+
+    return changed_fields, unchanged_fields
+
 def detect_changes(prev_units, units):
     messages = []
 
@@ -113,29 +174,11 @@ def detect_changes(prev_units, units):
 
         else:
             prev_info = prev_units[unit_id]
-            # Price changed
-            if info["rent"] != prev_info["rent"]:
-                msg = (
-                    f":money_with_wings: Price changed for {unit_id}\n"
-                    f"Bed/Bath: {info['bed_bath']}\n"
-                    f"Previous Rent: {prev_info['rent']}\n"
-                    f"New Rent: {info['rent']}\n"
-                    f"Available: {info['available']}\n"
-                    f"Concessions: {info['concessions']}\n"
-                    f"Net Rent: {info['net_rent']}"
-                )
-                messages.append(msg)
+            # Check for any field changes
+            changed_fields, unchanged_fields = detect_field_changes(prev_info, info)
 
-            # Concessions changed
-            if info["concessions"] != prev_info["concessions"]:
-                msg = (
-                    f":gift: Concessions updated for {unit_id}\n"
-                    f"Bed/Bath: {info['bed_bath']}\n"
-                    f"Rent: {info['rent']}\n"
-                    f"Previous Concessions: {prev_info['concessions']}\n"
-                    f"New Concessions: {info['concessions']}\n"
-                    f"Net Rent: {info['net_rent']}"
-                )
+            if changed_fields:
+                msg = format_field_change_message(unit_id, changed_fields, unchanged_fields, prev_info, info)
                 messages.append(msg)
 
     # Removed units
