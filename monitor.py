@@ -1,9 +1,12 @@
 import os
 import json
+import time
 from playwright.sync_api import sync_playwright
 import requests
 
 STATE_FILE = "units_state.json"
+MAX_RETRIES = 3
+RETRY_DELAY = 5  # seconds
 
 def load_state():
     if os.path.exists(STATE_FILE):
@@ -19,49 +22,78 @@ def save_state(units):
     with open(STATE_FILE, "w") as f:
         json.dump(units, f, indent=2)
 
-def scrape_units(url):
-    with sync_playwright() as p:
-        browser = p.chromium.launch(headless=True)
-        page = browser.new_page()
+def scrape_units(url, retry_count=0):
+    try:
+        with sync_playwright() as p:
+            browser = p.chromium.launch(headless=True)
+            page = browser.new_page()
 
-        page.goto(url, timeout=60000)
-        page.wait_for_selector("text=Residence", timeout=60000)
+            # Wait for page to load and network to be idle
+            page.goto(url, timeout=60000, wait_until="networkidle")
 
-        rows = page.query_selector_all("div:has-text('Residence') + div > div")
-        if not rows:
-            browser.close()
-            raise Exception("Could not find any floorplan rows after waiting")
-
-        units = {}
-        for row in rows:
+            # Wait for the "Residence" text to appear
             try:
-                cells = row.query_selector_all("div")
-                text_cells = [c.inner_text().strip() for c in cells]
-                if len(text_cells) < 2:
-                    continue
-
-                unit = text_cells[0]
-                bed_bath = text_cells[1]
-                rent = text_cells[2] if len(text_cells) > 2 else ""
-                available = text_cells[3] if len(text_cells) > 3 else ""
-                concessions = text_cells[4] if len(text_cells) > 4 else ""
-                net_rent = text_cells[5] if len(text_cells) > 5 else ""
-
-                # Only track 1-bedroom units
-                if bed_bath.startswith("1/"):
-                    units[unit] = {
-                        "bed_bath": bed_bath,
-                        "rent": rent,
-                        "available": available,
-                        "concessions": concessions,
-                        "net_rent": net_rent
-                    }
-
+                page.wait_for_selector("text=Residence", timeout=60000)
             except Exception as e:
-                print(f"Skipping a row due to error: {e}")
+                print(f"Warning: Could not find 'Residence' text: {e}")
+                # Try to wait a bit more for content to load
+                page.wait_for_timeout(3000)
 
-        browser.close()
-    return units
+            # Try multiple selector strategies with additional wait time
+            rows = page.query_selector_all("div:has-text('Residence') + div > div")
+
+            # Fallback: wait a bit more and try again (for slow-loading dynamic content)
+            if not rows:
+                print("No rows found initially, waiting for dynamic content...")
+                page.wait_for_timeout(3000)
+                rows = page.query_selector_all("div:has-text('Residence') + div > div")
+
+            if not rows:
+                browser.close()
+                raise Exception("Could not find any floorplan rows after waiting")
+
+            print(f"Found {len(rows)} potential rows")
+
+            units = {}
+            for row in rows:
+                try:
+                    cells = row.query_selector_all("div")
+                    text_cells = [c.inner_text().strip() for c in cells]
+                    if len(text_cells) < 2:
+                        continue
+
+                    unit = text_cells[0]
+                    bed_bath = text_cells[1]
+                    rent = text_cells[2] if len(text_cells) > 2 else ""
+                    available = text_cells[3] if len(text_cells) > 3 else ""
+                    concessions = text_cells[4] if len(text_cells) > 4 else ""
+                    net_rent = text_cells[5] if len(text_cells) > 5 else ""
+
+                    # Only track 1-bedroom units
+                    if bed_bath.startswith("1/"):
+                        units[unit] = {
+                            "bed_bath": bed_bath,
+                            "rent": rent,
+                            "available": available,
+                            "concessions": concessions,
+                            "net_rent": net_rent
+                        }
+
+                except Exception as e:
+                    print(f"Skipping a row due to error: {e}")
+
+            browser.close()
+            return units
+
+    except Exception as e:
+        if retry_count < MAX_RETRIES:
+            wait_time = RETRY_DELAY * (2 ** retry_count)  # Exponential backoff
+            print(f"Scraping failed (attempt {retry_count + 1}/{MAX_RETRIES}): {e}")
+            print(f"Retrying in {wait_time} seconds...")
+            time.sleep(wait_time)
+            return scrape_units(url, retry_count + 1)
+        else:
+            raise Exception(f"Scraping failed after {MAX_RETRIES} attempts: {e}")
 
 def detect_changes(prev_units, units):
     messages = []
@@ -138,12 +170,16 @@ def main():
         raise Exception("APARTMENT_URL or SLACK_WEBHOOK_URL environment variable not set")
 
     prev_units = load_state()
-    units = scrape_units(url)
-    messages = detect_changes(prev_units, units)
-    send_slack(messages, slack_webhook)
-    save_state(units)
 
-    print(f"Done. Found {len(units)} 1-bedroom units.")
+    try:
+        units = scrape_units(url)
+        messages = detect_changes(prev_units, units)
+        send_slack(messages, slack_webhook)
+        save_state(units)
+        print(f"Done. Found {len(units)} 1-bedroom units.")
+    except Exception as e:
+        print(f"Scraping failed: {str(e)}")
+        raise  # Re-raise to fail the workflow
 
 if __name__ == "__main__":
     main()
