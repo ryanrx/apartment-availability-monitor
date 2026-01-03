@@ -11,6 +11,8 @@ jobs:
 
     steps:
       - uses: actions/checkout@v3
+        with:
+          fetch-depth: 0  # needed to push commits
 
       - uses: actions/setup-python@v4
         with:
@@ -22,11 +24,12 @@ jobs:
           pip install -r requirements.txt
           python -m playwright install --with-deps chromium
 
-      - name: Download previous state
-        uses: actions/download-artifact@v4
-        with:
-          name: units-state
-        continue-on-error: true
+      - name: Restore state file
+        run: |
+          git fetch origin state:state || echo "No state branch yet"
+          if git show-ref --quiet refs/heads/state; then
+            git checkout state -- units_state.json || echo "No state file yet"
+          fi
 
       - name: Run monitor
         env:
@@ -34,8 +37,10 @@ jobs:
           SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
         run: python monitor.py
 
-      - name: Upload updated state
-        uses: actions/upload-artifact@v4
-        with:
-          name: units-state
-          path: units_state.json
+      - name: Commit updated state
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add units_state.json
+          git commit -m "Update units_state.json" || echo "No changes to commit"
+          git push --force https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }} HEAD:state
