@@ -8,7 +8,11 @@ STATE_FILE = "units_state.json"
 def load_state():
     if os.path.exists(STATE_FILE):
         with open(STATE_FILE, "r") as f:
-            return json.load(f)
+            data = json.load(f)
+            print(f"Loaded state file with {len(data)} units")
+            return data
+
+    print("No existing state file found (first run)")
     return {}
 
 def save_state(units):
@@ -123,6 +127,8 @@ def send_slack(messages, webhook):
         res = requests.post(webhook, json=payload)
         if res.status_code != 200:
             print(f"Error sending Slack message: {res.text}")
+        else:
+            print(f"Sent {len(messages)} alert(s) to Slack")
 
 def main():
     url = os.getenv("APARTMENT_URL")
