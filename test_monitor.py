@@ -264,7 +264,7 @@ class TestSendSlack(unittest.TestCase):
         mock_post.return_value = mock_response
 
         messages = ["Test message"]
-        monitor.send_slack(messages, "http://webhook.url")
+        monitor.send_slack(messages, "http://webhook.url", "https://example.com/apartments")
 
         mock_post.assert_called_once()
 

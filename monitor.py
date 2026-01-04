@@ -196,9 +196,12 @@ def detect_changes(prev_units, units):
 
     return ["\n" + m for m in messages]
 
-def send_slack(messages, webhook):
+def send_slack(messages, webhook, url=None):
     if messages:
-        payload = {"text": "\n".join(messages)}
+        combined_message = "\n".join(messages)
+        if url:
+            combined_message += f"\n\n{url}"
+        payload = {"text": combined_message}
         res = requests.post(webhook, json=payload)
         if res.status_code != 200:
             print(f"Error sending Slack message: {res.text}")
@@ -217,7 +220,7 @@ def main():
     try:
         units = scrape_units(url)
         messages = detect_changes(prev_units, units)
-        send_slack(messages, slack_webhook)
+        send_slack(messages, slack_webhook, url)
         save_state(units)
         print(f"Done. Found {len(units)} 1-bedroom units.")
     except Exception as e:
