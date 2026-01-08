@@ -123,14 +123,14 @@ def format_field_change_message(unit_id, changed_fields, unchanged_fields, prev_
         else:
             title = f"{emoji_str} {', '.join(field_names[:-1])}, and {field_names[-1]} changed for {unit_id}"
 
-    lines = [f"{title}\n"]
-    lines.append(f"Bed/Bath: {info['bed_bath']}\n")
+    lines = [f"{title}"]
+    lines.append(f"Bed/Bath: {info['bed_bath']}")
 
     # Show changed fields with before/after
     for field in changed_fields:
         prev_value = prev_info.get(field, "")
         new_value = info.get(field, "")
-        lines.append(f"{field.replace('_', ' ').title()}: {prev_value} → {new_value}")
+        lines.append(f"{field.replace('_', ' ').title()}: {prev_value} :arrow_right: {new_value} :alert:")
 
     # Show unchanged fields for context
     for field in unchanged_fields:

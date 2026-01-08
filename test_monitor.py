@@ -53,7 +53,7 @@ class TestFormatFieldChangeMessage(unittest.TestCase):
 
         self.assertIn(":money_with_wings:", msg)
         self.assertIn("Rent changed for 1205", msg)
-        self.assertIn("Rent: $3,200 → $3,300", msg)
+        self.assertIn("Rent: $3,200 :arrow_right: $3,300 :alert:", msg)
         self.assertIn("Bed/Bath: 1/1", msg)
 
     def test_multiple_fields_change(self):
@@ -67,8 +67,8 @@ class TestFormatFieldChangeMessage(unittest.TestCase):
         self.assertIn(":money_with_wings:", msg)
         self.assertIn(":calendar:", msg)
         self.assertIn("Rent and Available changed for 1205", msg)
-        self.assertIn("Rent: $3,200 → $3,300", msg)
-        self.assertIn("Available: 3/15/2026 → 4/1/2026", msg)
+        self.assertIn("Rent: $3,200 :arrow_right: $3,300 :alert:", msg)
+        self.assertIn("Available: 3/15/2026 :arrow_right: 4/1/2026 :alert:", msg)
 
     def test_three_fields_change(self):
         changed = ["rent", "available", "concessions"]
@@ -79,9 +79,9 @@ class TestFormatFieldChangeMessage(unittest.TestCase):
         msg = monitor.format_field_change_message("1205", changed, unchanged, prev_info, info)
 
         self.assertIn("Rent, Available, and Concessions changed for 1205", msg)
-        self.assertIn("Rent: $3,200 → $3,300", msg)
-        self.assertIn("Available: 3/15/2026 → 4/1/2026", msg)
-        self.assertIn("Concessions: NONE → 1 month free", msg)
+        self.assertIn("Rent: $3,200 :arrow_right: $3,300 :alert:", msg)
+        self.assertIn("Available: 3/15/2026 :arrow_right: 4/1/2026 :alert:", msg)
+        self.assertIn("Concessions: NONE :arrow_right: 1 month free :alert:", msg)
 
 
 class TestDetectChanges(unittest.TestCase):
@@ -143,7 +143,7 @@ class TestDetectChanges(unittest.TestCase):
 
         self.assertEqual(len(messages), 1)
         self.assertIn("Rent changed for 1205", messages[0])
-        self.assertIn("Rent: $3,200 → $3,300", messages[0])
+        self.assertIn("Rent: $3,200 :arrow_right: $3,300 :alert:", messages[0])
 
     def test_no_changes(self):
         prev_units = {
