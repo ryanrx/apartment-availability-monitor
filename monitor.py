@@ -115,9 +115,9 @@ def format_field_change_message(unit_id, changed_fields, unchanged_fields, prev_
     # Build title with all changed fields
     if len(changed_fields) == 1:
         field_name = changed_fields[0].replace('_', ' ').title()
-        title = f"{emoji_str} {field_name} changed for {unit_id}"
+        title = f"{emoji_str} *{field_name}* changed for {unit_id}"
     else:
-        field_names = [f.replace('_', ' ').title() for f in changed_fields]
+        field_names = [f"*{f.replace('_', ' ').title()}*" for f in changed_fields]
         if len(field_names) == 2:
             title = f"{emoji_str} {' and '.join(field_names)} changed for {unit_id}"
         else:
@@ -130,7 +130,7 @@ def format_field_change_message(unit_id, changed_fields, unchanged_fields, prev_
     for field in changed_fields:
         prev_value = prev_info.get(field, "")
         new_value = info.get(field, "")
-        lines.append(f"{field.replace('_', ' ').title()}: {prev_value} :arrow_right: {new_value} :alert:")
+        lines.append(f"*{field.replace('_', ' ').title()}: {prev_value} :arrow_right: {new_value}*")
 
     # Show unchanged fields for context
     for field in unchanged_fields:
@@ -163,7 +163,7 @@ def detect_changes(prev_units, units):
     for unit_id, info in units.items():
         if unit_id not in prev_units:
             msg = (
-                f":new: New 1-bedroom unit {unit_id}\n"
+                f":new: *New* 1-bedroom unit {unit_id}\n"
                 f"Bed/Bath: {info['bed_bath']}\n"
                 f"Rent: {info['rent']}\n"
                 f"Available: {info['available']}\n"
@@ -185,7 +185,7 @@ def detect_changes(prev_units, units):
     for unit_id, prev_info in prev_units.items():
         if unit_id not in units:
             msg = (
-                f":x: Unit {unit_id} is no longer available\n"
+                f":x: Unit {unit_id} is *no longer available*\n"
                 f"Bed/Bath: {prev_info['bed_bath']}\n"
                 f"Rent: {prev_info['rent']}\n"
                 f"Available: {prev_info['available']}\n"

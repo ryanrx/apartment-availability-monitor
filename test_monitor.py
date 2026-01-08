@@ -52,8 +52,8 @@ class TestFormatFieldChangeMessage(unittest.TestCase):
         msg = monitor.format_field_change_message("1205", changed, unchanged, prev_info, info)
 
         self.assertIn(":money_with_wings:", msg)
-        self.assertIn("Rent changed for 1205", msg)
-        self.assertIn("Rent: $3,200 :arrow_right: $3,300 :alert:", msg)
+        self.assertIn("*Rent* changed for 1205", msg)
+        self.assertIn("*Rent: $3,200 :arrow_right: $3,300*", msg)
         self.assertIn("Bed/Bath: 1/1", msg)
 
     def test_multiple_fields_change(self):
@@ -66,9 +66,9 @@ class TestFormatFieldChangeMessage(unittest.TestCase):
 
         self.assertIn(":money_with_wings:", msg)
         self.assertIn(":calendar:", msg)
-        self.assertIn("Rent and Available changed for 1205", msg)
-        self.assertIn("Rent: $3,200 :arrow_right: $3,300 :alert:", msg)
-        self.assertIn("Available: 3/15/2026 :arrow_right: 4/1/2026 :alert:", msg)
+        self.assertIn("*Rent* and *Available* changed for 1205", msg)
+        self.assertIn("*Rent: $3,200 :arrow_right: $3,300*", msg)
+        self.assertIn("*Available: 3/15/2026 :arrow_right: 4/1/2026*", msg)
 
     def test_three_fields_change(self):
         changed = ["rent", "available", "concessions"]
@@ -78,10 +78,10 @@ class TestFormatFieldChangeMessage(unittest.TestCase):
 
         msg = monitor.format_field_change_message("1205", changed, unchanged, prev_info, info)
 
-        self.assertIn("Rent, Available, and Concessions changed for 1205", msg)
-        self.assertIn("Rent: $3,200 :arrow_right: $3,300 :alert:", msg)
-        self.assertIn("Available: 3/15/2026 :arrow_right: 4/1/2026 :alert:", msg)
-        self.assertIn("Concessions: NONE :arrow_right: 1 month free :alert:", msg)
+        self.assertIn("*Rent*, *Available*, and *Concessions* changed for 1205", msg)
+        self.assertIn("*Rent: $3,200 :arrow_right: $3,300*", msg)
+        self.assertIn("*Available: 3/15/2026 :arrow_right: 4/1/2026*", msg)
+        self.assertIn("*Concessions: NONE :arrow_right: 1 month free*", msg)
 
 
 class TestDetectChanges(unittest.TestCase):
@@ -100,7 +100,7 @@ class TestDetectChanges(unittest.TestCase):
 
         self.assertEqual(len(messages), 1)
         self.assertIn(":new:", messages[0])
-        self.assertIn("New 1-bedroom unit 1205", messages[0])
+        self.assertIn("*New* 1-bedroom unit 1205", messages[0])
         self.assertIn("Rent: $3,200", messages[0])
 
     def test_removed_unit(self):
@@ -118,7 +118,7 @@ class TestDetectChanges(unittest.TestCase):
 
         self.assertEqual(len(messages), 1)
         self.assertIn(":x:", messages[0])
-        self.assertIn("Unit 1205 is no longer available", messages[0])
+        self.assertIn("Unit 1205 is *no longer available*", messages[0])
 
     def test_field_changed(self):
         prev_units = {
@@ -142,8 +142,8 @@ class TestDetectChanges(unittest.TestCase):
         messages = monitor.detect_changes(prev_units, units)
 
         self.assertEqual(len(messages), 1)
-        self.assertIn("Rent changed for 1205", messages[0])
-        self.assertIn("Rent: $3,200 :arrow_right: $3,300 :alert:", messages[0])
+        self.assertIn("*Rent* and *Net Rent* changed for 1205", messages[0])
+        self.assertIn("*Rent: $3,200 :arrow_right: $3,300*", messages[0])
 
     def test_no_changes(self):
         prev_units = {
@@ -205,9 +205,9 @@ class TestDetectChanges(unittest.TestCase):
 
         # Should have: 1205 changed, 1502 removed, 1807 new
         self.assertEqual(len(messages), 3)
-        self.assertTrue(any("Rent changed for 1205" in msg for msg in messages))
-        self.assertTrue(any("Unit 1502 is no longer available" in msg for msg in messages))
-        self.assertTrue(any("New 1-bedroom unit 1807" in msg for msg in messages))
+        self.assertTrue(any("*Rent* and *Net Rent* changed for 1205" in msg for msg in messages))
+        self.assertTrue(any("Unit 1502 is *no longer available*" in msg for msg in messages))
+        self.assertTrue(any("*New* 1-bedroom unit 1807" in msg for msg in messages))
 
 
 class TestStateManagement(unittest.TestCase):
