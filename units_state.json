@@ -1,0 +1,23 @@
+{
+  "3206": {
+    "bed_bath": "1/1",
+    "rent": "$4,400",
+    "available": "10/12/2026",
+    "concessions": "NONE",
+    "net_rent": "$4,400"
+  },
+  "3106": {
+    "bed_bath": "1/1",
+    "rent": "$4,443",
+    "available": "10/7/2026",
+    "concessions": "NONE",
+    "net_rent": "$4,443"
+  },
+  "207": {
+    "bed_bath": "1/1",
+    "rent": "$4,497",
+    "available": "11/7/2026",
+    "concessions": "NONE",
+    "net_rent": "$4,497"
+  }
+}
