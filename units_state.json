@@ -1,0 +1,51 @@
+{
+  "2004": {
+    "bed_bath": "1/2",
+    "rent": "$5,250",
+    "available": "11/7/2026",
+    "concessions": "NONE",
+    "net_rent": "$5,250"
+  },
+  "3206": {
+    "bed_bath": "1/1",
+    "rent": "$4,400",
+    "available": "10/12/2026",
+    "concessions": "NONE",
+    "net_rent": "$4,400"
+  },
+  "3106": {
+    "bed_bath": "1/1",
+    "rent": "$4,443",
+    "available": "10/7/2026",
+    "concessions": "NONE",
+    "net_rent": "$4,443"
+  },
+  "207": {
+    "bed_bath": "1/1",
+    "rent": "$4,497",
+    "available": "11/7/2026",
+    "concessions": "NONE",
+    "net_rent": "$4,497"
+  },
+  "3609": {
+    "bed_bath": "1/1",
+    "rent": "$4,867",
+    "available": "11/13/2026",
+    "concessions": "NONE",
+    "net_rent": "$4,867"
+  },
+  "4003": {
+    "bed_bath": "1/1",
+    "rent": "$5,000",
+    "available": "12/22/2026",
+    "concessions": "NONE",
+    "net_rent": "$5,000"
+  },
+  "204": {
+    "bed_bath": "1/1",
+    "rent": "$4,395",
+    "available": "10/7/2026",
+    "concessions": "NONE",
+    "net_rent": "$4,395"
+  }
+}
